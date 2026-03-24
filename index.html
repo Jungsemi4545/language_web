@@ -2,109 +2,136 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>My Language Learning Hub</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 언어 학습 파트너</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
-        .container { max-width: 800px; margin: auto; }
-        .lang-selector { margin-bottom: 30px; padding: 10px; background: #f0f0f0; border-radius: 8px; }
-        .card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-top: 10px; }
-        .hidden { display: none; }
-        button { cursor: pointer; padding: 8px 16px; margin-right: 5px; }
-        .active-btn { background-color: #007bff; color: white; border: none; }
+        :root { --primary: #4a90e2; --bg: #f5f7fa; }
+        body { font-family: 'Pretendard', sans-serif; background: var(--bg); margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: auto; }
+        .header { text-align: center; margin-bottom: 30px; }
+        
+        /* 언어 선택 바 */
+        .lang-nav { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        button { padding: 10px 20px; border: none; border-radius: 20px; cursor: pointer; transition: 0.3s; }
+        .btn-lang { background: white; color: #333; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .btn-lang.active { background: var(--primary); color: white; }
+
+        /* 섹션 스타일 */
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        h2 { border-bottom: 2px solid var(--primary); padding-bottom: 10px; color: #333; }
+
+        /* 단어 입력창 */
+        .input-group { display: flex; flex-direction: column; gap: 10px; }
+        input, select { padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
+        
+        /* 단어 리스트 */
+        .word-list { margin-top: 15px; list-style: none; padding: 0; }
+        .word-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; }
+        .learned { text-decoration: line-through; color: #aaa; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🌍 외국어 학습 파트너</h1>
-    
-    <div class="lang-selector">
-        <p>공부할 언어를 선택하세요:</p>
-        <button onclick="selectLanguage('en')" id="btn-en">English</button>
-        <button onclick="selectLanguage('jp')" id="id-jp">日本語</button>
+    <div class="header">
+        <h1>🌍 AI 언어 학습 파트너</h1>
+        <div class="lang-nav" id="langNav">
+            <button class="btn-lang" onclick="changeLang('en')" id="nav-en">English</button>
+            <button class="btn-lang" onclick="changeLang('jp')" id="nav-jp">日本語</button>
+            <button class="btn-lang" onclick="changeLang('cn')" id="nav-cn">中文</button>
+        </div>
     </div>
 
-    <hr>
-
-    <div id="content-area" class="hidden">
-        <h2 id="display-lang-name">언어 이름</h2>
-        
+    <div class="grid">
         <div class="card">
-            <h3>📝 추천 시험 정보</h3>
-            <p id="exam-info">시험 정보가 여기에 표시됩니다.</p>
+            <h2>📖 <span id="current-lang-text">언어</span> 단어장</h2>
+            <div class="input-group">
+                <input type="text" id="wordInput" placeholder="단어 (예: Apple)">
+                <input type="text" id="meanInput" placeholder="뜻 (예: 사과)">
+                <select id="levelInput">
+                    <option value="초급">초급</option>
+                    <option value="중급">중급</option>
+                    <option value="고급">고급</option>
+                </select>
+                <button style="background: var(--primary); color: white;" onclick="addWord()">추가하기</button>
+            </div>
+            <ul id="wordList" class="word-list"></ul>
         </div>
 
         <div class="card">
-            <h3>❓ 예시 문제 (AI 추천 스타일)</h3>
-            <div id="exam-sample" style="background: #fff9e6; padding: 10px;">
-                </div>
+            <h2>🎯 추천 시험 및 AI 예제</h2>
+            <div id="exam-content">
+                <p>언어를 선택하면 시험 정보가 나타납니다.</p>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-    // 언어별 데이터 (나중에 별도 JSON 파일로 분리 가능)
-    const langData = {
-        en: {
-            name: "영어 (English)",
-            exam: "TOEIC, TOEFL, OPIc",
-            sample: "Q: Choose the correct word. 'She ____ to the store yesterday.' (A) go (B) went (C) gone"
-        },
-        jp: {
-            name: "일본어 (Japanese)",
-            exam: "JLPT (N1~N5), JPT",
-            sample: "Q: 次の漢字の読み方を選びなさい。'昨日' (A) きのう (B) あした (C) 今日"
-        }
+    const examData = {
+        en: { title: "TOEIC / TOEFL", sample: "AI 추천: 시제 일치 문제를 집중 공략하세요!" },
+        jp: { title: "JLPT (N1~N5)", sample: "AI 추천: 한자 읽기 문제는 매일 10개씩!" },
+        cn: { title: "HSK (1~6급)", sample: "AI 추천: 성조 변화에 주의하여 듣기를 연습하세요." }
     };
 
-    function selectLanguage(lang) {
-        // 1. 데이터 가져오기
-        const data = langData[lang];
-        
-        // 2. UI 업데이트
-        document.getElementById('content-area').classList.remove('hidden');
-        document.getElementById('display-lang-name').innerText = data.name;
-        document.getElementById('exam-info').innerText = "추천 시험: " + data.exam;
-        document.getElementById('exam-sample').innerText = data.sample;
+    let currentLang = localStorage.getItem('selectedLang') || 'en';
+    let allWords = JSON.parse(localStorage.getItem('myWords')) || { en: [], jp: [], cn: [] };
 
-        // 3. 버튼 활성화 표시
-        document.querySelectorAll('button').forEach(btn => btn.classList.remove('active-btn'));
-        document.getElementById(`btn-${lang}`)?.classList.add('active-btn');
-        document.getElementById(`id-${lang}`)?.classList.add('active-btn');
-
-        // 4. 선택 저장 (새로고침해도 유지되게)
+    function changeLang(lang) {
+        currentLang = lang;
         localStorage.setItem('selectedLang', lang);
+        
+        // 버튼 활성화 스타일 업데이트
+        document.querySelectorAll('.btn-lang').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(`nav-${lang}`).classList.add('active');
+        
+        // 텍스트 업데이트
+        document.getElementById('current-lang-text').innerText = lang.toUpperCase();
+        
+        // 시험 정보 업데이트
+        const exam = examData[lang];
+        document.getElementById('exam-content').innerHTML = `
+            <h3>${exam.title}</h3>
+            <p style="background:#eef5ff; padding:10px; border-radius:8px;">${exam.sample}</p>
+        `;
+
+        renderWords();
     }
 
-    // 페이지 로드 시 마지막 선택 불러오기
-    window.onload = () => {
-        const lastLang = localStorage.getItem('selectedLang');
-        if (lastLang) selectLanguage(lastLang);
-    };
-    let myWords = JSON.parse(localStorage.getItem('myWords')) || { en: [], jp: [] };
+    function addWord() {
+        const word = document.getElementById('wordInput').value;
+        const mean = document.getElementById('meanInput').value;
+        const level = document.getElementById('levelInput').value;
 
-function addWord() {
-    const currentLang = localStorage.getItem('selectedLang'); // 현재 선택된 언어 (en/jp)
-    const word = document.getElementById('word-input').value;
-    const mean = document.getElementById('mean-input').value;
+        if(!word || !mean) return;
 
-    if(!word || !mean) return alert("단어와 뜻을 입력하세요!");
+        allWords[currentLang].push({ word, mean, level, learned: false });
+        localStorage.setItem('myWords', JSON.stringify(allWords));
+        
+        document.getElementById('wordInput').value = '';
+        document.getElementById('meanInput').value = '';
+        renderWords();
+    }
 
-    // 데이터 추가
-    myWords[currentLang].push({
-        word: word,
-        mean: mean,
-        level: 'Easy',
-        learned: false,
-        date: new Date().toLocaleDateString()
-    });
+    function toggleWord(index) {
+        allWords[currentLang][index].learned = !allWords[currentLang][index].learned;
+        localStorage.setItem('myWords', JSON.stringify(allWords));
+        renderWords();
+    }
 
-    // 브라우저에 저장
-    localStorage.setItem('myWords', JSON.stringify(myWords));
-    
-    alert("저장되었습니다!");
-    renderWordList(); // 리스트 새로고침
-}
+    function renderWords() {
+        const list = document.getElementById('wordList');
+        list.innerHTML = allWords[currentLang].map((item, index) => `
+            <li class="word-item ${item.learned ? 'learned' : ''}" onclick="toggleWord(${index})">
+                <span><b>${item.word}</b>: ${item.mean}</span>
+                <small>[${item.level}]</small>
+            </li>
+        `).join('');
+    }
+
+    // 초기 실행
+    changeLang(currentLang);
 </script>
 
 </body>
