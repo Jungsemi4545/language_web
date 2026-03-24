@@ -1,7 +1,8 @@
+// [초기 데이터 및 설정]
 const config = {
-    en: { placeholder: "Apple / 사과 / I like apples.", exams: [{name:"TOEIC", info:"비즈니스 영어"}, {name:"OPIc", info:"영어 말하기"}] },
-    jp: { placeholder: "りんご / 사과 / りんごを食べる。", exams: [{name:"JLPT", info:"일본어 능력시험"}, {name:"JPT", info:"실용 일본어"}] },
-    cn: { placeholder: "苹果 / 사과 / 我吃苹果。", exams: [{name:"HSK", info:"중국어 능력시험"}] }
+    en: { placeholder: "Apple / 사과", exams: [{name:"TOEIC", info:"비즈니스 영어"}, {name:"OPIc", info:"말하기"}] },
+    jp: { placeholder: "りんご / 사과", exams: [{name:"JLPT", info:"일본어 능력시험"}, {name:"JPT", info:"실용 일본어"}] },
+    cn: { placeholder: "苹果 / 사과", exams: [{name:"HSK", info:"중국어 능력시험"}] }
 };
 
 let currentLang = localStorage.getItem('selectedLang') || 'en';
@@ -11,12 +12,20 @@ let db = JSON.parse(localStorage.getItem('langLabDB')) || {
     cn: { words: [], archives: [], goal: "" }
 };
 
+// [섹션 전환 로직]
+function showSection(id) {
+    document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    document.querySelectorAll('.nav-link').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('onclick').includes(id));
+    });
+}
+
+// [기본 기능들]
 function switchLanguage(lang) {
     currentLang = lang;
     localStorage.setItem('selectedLang', lang);
-    document.getElementById('langSelect').value = lang;
     document.getElementById('display-lang').innerText = lang.toUpperCase();
-    document.getElementById('exIn').placeholder = config[lang].placeholder;
     document.getElementById('goalInput').value = db[lang].goal || "";
     renderAll();
 }
@@ -24,11 +33,11 @@ function switchLanguage(lang) {
 function addWord() {
     const w = document.getElementById('wordIn').value;
     const m = document.getElementById('meanIn').value;
-    const e = document.getElementById('exIn').value;
+    const c = document.getElementById('vocaCat').value;
     if(!w || !m) return;
-    db[currentLang].words.push({ word: w, mean: m, ex: e, done: false });
+    db[currentLang].words.push({ word: w, mean: m, cat: c, done: false });
     saveAndRefresh();
-    document.getElementById('wordIn').value = ''; document.getElementById('meanIn').value = ''; document.getElementById('exIn').value = '';
+    document.getElementById('wordIn').value = ''; document.getElementById('meanIn').value = '';
 }
 
 function addArchive() {
@@ -41,74 +50,92 @@ function addArchive() {
     document.getElementById('archiveTitle').value = ''; document.getElementById('archiveContent').value = '';
 }
 
-function toggleWord(index) {
-    db[currentLang].words[index].done = !db[currentLang].words[index].done;
-    saveAndRefresh();
-}
-
-function deleteItem(index, type) {
-    db[currentLang][type].splice(index, 1);
-    saveAndRefresh();
-}
-
-function saveGoal() {
-    db[currentLang].goal = document.getElementById('goalInput').value;
-    saveAndRefresh();
-}
-
 function saveAndRefresh() {
     localStorage.setItem('langLabDB', JSON.stringify(db));
     renderAll();
 }
 
+// [렌더링 로직]
 function renderAll() {
-    // 통계
     const words = db[currentLang].words;
     const doneCount = words.filter(w => w.done).length;
+    const pct = words.length ? Math.round((doneCount/words.length)*100) : 0;
+
+    // 대시보드 업데이트
     document.getElementById('total-words').innerText = words.length;
     document.getElementById('done-words').innerText = doneCount;
-    document.getElementById('progress-pct').innerText = words.length ? Math.round((doneCount/words.length)*100)+'%' : '0%';
+    document.getElementById('progress-pct').innerText = pct + '%';
+    document.getElementById('progress-fill').style.width = pct + '%';
 
-    // 단어장 리스트
-    document.getElementById('wordList').innerHTML = words.map((w, i) => `
+    renderWords('전체');
+    renderArchives();
+    
+    // 시험 탭
+    document.getElementById('examTabs').innerHTML = config[currentLang].exams.map((e, i) => 
+        `<button class="tab-btn" onclick="showExam(${i})">${e.name}</button>`
+    ).join('');
+}
+
+function renderWords(filter) {
+    let list = db[currentLang].words;
+    if(filter === '미완료') list = list.filter(w => !w.done);
+    else if(filter !== '전체') list = list.filter(w => w.cat === filter);
+
+    document.getElementById('wordList').innerHTML = list.map((w, i) => `
         <tr class="${w.done ? 'done-row' : ''}">
-            <td><input type="checkbox" ${w.done ? 'checked' : ''} onclick="toggleWord(${i})"></td>
-            <td><strong>${w.word}</strong></td>
-            <td>${w.mean}<br><small>${w.ex}</small></td>
-            <td><button onclick="deleteItem(${i}, 'words')" style="color:red; background:none;">✕</button></td>
+            <td><input type="checkbox" ${w.done ? 'checked' : ''} onclick="toggleWord(${db[currentLang].words.indexOf(w)})"></td>
+            <td><strong>${w.word}</strong> <small>(${w.cat})</small></td>
+            <td>${w.mean}</td>
+            <td><button onclick="deleteItem(${db[currentLang].words.indexOf(w)}, 'words')" style="color:red; background:none;">✕</button></td>
         </tr>
     `).join('');
+}
 
-    // 자료 정리 리스트
+function renderArchives() {
     document.getElementById('archiveDisplay').innerHTML = db[currentLang].archives.map((a, i) => `
         <div class="archive-item">
             <span class="tag">${a.type.toUpperCase()}</span>
-            <div style="font-weight:bold; margin-bottom:5px;">${a.title}</div>
-            <div style="font-size:13px; color:var(--text-sub);">${a.content}</div>
-            <button onclick="deleteItem(${i}, 'archives')" style="position:absolute; top:5px; right:5px; background:none; font-size:10px;">✕</button>
+            <div style="font-weight:bold;">${a.title}</div>
+            <div style="font-size:12px; margin-top:5px; word-break:break-all;">${a.content}</div>
+            <button onclick="deleteItem(${i}, 'archives')" style="position:absolute; top:5px; right:5px; background:none;">✕</button>
         </div>
     `).join('');
-
-    // 시험 정보 탭
-    document.getElementById('examTabs').innerHTML = config[currentLang].exams.map((e, i) => `
-        <button class="tab-btn" onclick="showExam(${i})">${e.name}</button>
-    `).join('');
 }
 
+// [퀴즈 엔진]
+function startQuiz() {
+    const words = db[currentLang].words;
+    if(words.length < 4) return alert("퀴즈를 위해 최소 4개의 단어가 필요합니다.");
+    
+    const target = words[Math.floor(Math.random() * words.length)];
+    let options = [target.mean];
+    while(options.length < 4) {
+        let randomMean = words[Math.floor(Math.random() * words.length)].mean;
+        if(!options.includes(randomMean)) options.push(randomMean);
+    }
+    options.sort(() => Math.random() - 0.5);
+
+    document.getElementById('quiz-area').innerHTML = `
+        <div class="quiz-question">"${target.word}"의 뜻은?</div>
+        <div class="quiz-options">
+            ${options.map(opt => `<button class="option-btn" onclick="checkAnswer('${opt}', '${target.mean}')">${opt}</button>`).join('')}
+        </div>
+    `;
+}
+
+function checkAnswer(selected, correct) {
+    if(selected === correct) alert("정답입니다! 🎉");
+    else alert(`틀렸습니다. 정답은 [${correct}]입니다.`);
+    startQuiz();
+}
+
+// 기타 기능 (삭제, 체크, 목표저장 등)
+function toggleWord(i) { db[currentLang].words[i].done = !db[currentLang].words[i].done; saveAndRefresh(); }
+function deleteItem(i, type) { db[currentLang][type].splice(i, 1); saveAndRefresh(); }
+function saveGoal() { db[currentLang].goal = document.getElementById('goalInput').value; saveAndRefresh(); }
 function showExam(i) {
     const e = config[currentLang].exams[i];
-    document.getElementById('examDetail').innerHTML = `<strong>${e.name}</strong><br>${e.info}`;
-    document.querySelectorAll('.tab-btn').forEach((b, idx) => b.classList.toggle('active', idx === i));
-}
-
-function exportData() {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
-    const downloadAnchorNode = document.createElement('a');
-    downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", "my_language_data.json");
-    document.body.appendChild(downloadAnchorNode);
-    downloadAnchorNode.click();
-    downloadAnchorNode.remove();
+    document.getElementById('examDetail').innerHTML = `<strong>${e.name}</strong>: ${e.info}`;
 }
 
 window.onload = () => switchLanguage(currentLang);
