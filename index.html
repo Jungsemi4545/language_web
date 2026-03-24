@@ -3,113 +3,122 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Language Lab Pro</title>
+    <title>Language Lab Pro - My Study Dashboard</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<nav class="navbar">
-    <div class="nav-container">
-        <span class="logo">LANGUAGE LAB</span>
-        <div class="nav-menu">
-            <button class="nav-link active" onclick="showSection('dash-sec')">홈</button>
-            <button class="nav-link" onclick="showSection('voca-sec')">단어장</button>
-            <button class="nav-link" onclick="showSection('archive-sec')">자료실</button>
-            <button class="nav-link" onclick="showSection('quiz-sec')">퀴즈</button>
-        </div>
-        <div class="nav-right">
+<div class="app-wrapper">
+    <aside class="sidebar">
+        <div class="sidebar-logo">MY LANG LAB</div>
+        <nav class="sidebar-nav">
+            <button class="nav-btn active" onclick="showSection('dash-sec', this)">🏠 홈/통계</button>
+            <button class="nav-btn" onclick="showSection('voca-sec', this)">📓 단어장</button>
+            <button class="nav-btn" onclick="showSection('archive-sec', this)">📚 자료실</button>
+            <button class="nav-btn" onclick="showSection('quiz-sec', this)">🧠 퀴즈</button>
+        </nav>
+        <div class="sidebar-footer">
+            <label>학습 언어 선택</label>
             <select id="langSelect" onchange="switchLanguage(this.value)">
-                <option value="en">English</option>
-                <option value="jp">日本語</option>
-                <option value="cn">中文</option>
+                <option value="en">English (영어)</option>
+                <option value="jp">日本語 (일본어)</option>
+                <option value="cn">中文 (중국어)</option>
             </select>
+            <button class="btn-export" onclick="exportData()">📦 데이터 백업</button>
         </div>
-    </div>
-</nav>
+    </aside>
 
-<div class="main-container">
-    <section id="dash-sec" class="content-section active">
-        <div class="card">
-            <h2>📊 <span id="display-lang">EN</span> 학습 통계</h2>
-            <div class="progress-container">
-                <div class="progress-text">전체 달성률: <span id="progress-pct">0%</span></div>
-                <div class="progress-bar-bg">
-                    <div id="progress-fill" class="progress-bar-fill"></div>
+    <main class="main-content">
+        
+        <section id="dash-sec" class="content-section active">
+            <header class="page-header">
+                <h1>안녕하세요! 현재 <span id="display-lang-name">영어</span> 학습 중입니다.</h1>
+            </header>
+            
+            <div class="dashboard-grid">
+                <div class="card stat-main">
+                    <h3>📊 학습 진척도</h3>
+                    <div class="progress-info">
+                        <span>전체 달성률: <strong id="progress-pct">0%</strong></span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div id="progress-fill" class="progress-bar-fill"></div>
+                    </div>
+                    <div class="stats-mini-row">
+                        <div class="stat-item"><span>등록 단어</span><strong id="total-words">0</strong></div>
+                        <div class="stat-item"><span>완료 단어</span><strong id="done-words">0</strong></div>
+                    </div>
+                </div>
+
+                <div class="card goal-card">
+                    <h3>🏁 학습 목표</h3>
+                    <textarea id="goalInput" placeholder="이번 달의 목표를 적어보세요!" onchange="saveGoal()"></textarea>
                 </div>
             </div>
-            <div class="stats-row">
-                <div class="stat-box"><span>단어 수</span><strong id="total-words">0</strong></div>
-                <div class="stat-box"><span>학습 완료</span><strong id="done-words">0</strong></div>
-            </div>
-            <div class="goal-area">
-                <label>🏁 나의 목표:</label>
-                <input type="text" id="goalInput" placeholder="목표를 입력하세요." onchange="saveGoal()">
-            </div>
-        </div>
-        
-        <div class="card">
-            <h2>🏆 시험 정보</h2>
-            <div id="examTabs" class="tabs"></div>
-            <div id="examDetail" class="detail-box">언어를 선택하세요.</div>
-        </div>
-    </section>
 
-    <section id="voca-sec" class="content-section">
-        <div class="card">
-            <h2>📓 단어장 관리</h2>
-            <div class="input-row">
-                <input type="text" id="wordIn" placeholder="단어">
-                <input type="text" id="meanIn" placeholder="뜻">
-                <select id="vocaCat">
-                    <option value="명사">명사</option>
-                    <option value="동사">동사</option>
-                    <option value="형용사">형용사</option>
-                    <option value="기타">기타</option>
-                </select>
-                <button class="btn-add" onclick="addWord()">추가</button>
+            <div class="card">
+                <h3>🏆 추천 시험 정보</h3>
+                <div id="examTabs" class="tabs-row"></div>
+                <div id="examDetail" class="exam-info-box">언어를 선택하면 시험 정보가 나타납니다.</div>
             </div>
-            <div class="filter-row">
-                <button onclick="renderWords('전체')">전체</button>
-                <button onclick="renderWords('명사')">명사</button>
-                <button onclick="renderWords('동사')">동사</button>
-                <button onclick="renderWords('미완료')">미완료만</button>
-            </div>
-            <div class="table-wrapper">
-                <table class="data-table">
-                    <thead>
-                        <tr><th>학습</th><th>단어(분류)</th><th>뜻</th><th>삭제</th></tr>
-                    </thead>
-                    <tbody id="wordList"></tbody>
-                </table>
-            </div>
-        </div>
-    </section>
+        </section>
 
-    <section id="archive-sec" class="content-section">
-        <div class="card">
-            <h2>📚 자료실 (PDF 및 링크)</h2>
-            <div class="input-row">
-                <select id="archiveType">
-                    <option value="grammar">문법</option>
-                    <option value="exp">회화</option>
-                    <option value="exam">시험자료</option>
-                </select>
-                <input type="text" id="archiveTitle" placeholder="제목">
-                <input type="text" id="archiveContent" placeholder="내용 또는 파일 경로(PDF 등)">
-                <button class="btn-add" onclick="addArchive()">저장</button>
+        <section id="voca-sec" class="content-section">
+            <header class="page-header"><h1>📓 나의 단어장</h1></header>
+            <div class="card">
+                <div class="input-grid">
+                    <input type="text" id="wordIn" placeholder="단어">
+                    <input type="text" id="meanIn" placeholder="뜻">
+                    <select id="vocaCat">
+                        <option value="명사">명사</option>
+                        <option value="동사">동사</option>
+                        <option value="형용사">형용사</option>
+                        <option value="표현">표현/기타</option>
+                    </select>
+                    <button class="primary-btn" onclick="addWord()">추가</button>
+                </div>
             </div>
-            <div id="archiveDisplay" class="archive-grid"></div>
-        </div>
-    </section>
+            
+            <div class="filter-bar">
+                <button class="filter-btn active" onclick="filterWords('전체', this)">전체</button>
+                <button class="filter-btn" onclick="filterWords('미완료', this)">미완료</button>
+                <button class="filter-btn" onclick="filterWords('명사', this)">명사</button>
+                <button class="filter-btn" onclick="filterWords('동사', this)">동사</button>
+            </div>
 
-    <section id="quiz-sec" class="content-section">
-        <div class="card quiz-card">
-            <h2>🧠 단어 퀴즈</h2>
-            <div id="quiz-area">
-                <button class="btn-add" onclick="startQuiz()">퀴즈 시작하기</button>
+            <div class="voca-grid" id="wordListDisplay">
+                </div>
+        </section>
+
+        <section id="archive-sec" class="content-section">
+            <header class="page-header"><h1>📚 자료 및 문법 정리</h1></header>
+            <div class="card">
+                <div class="input-grid-archive">
+                    <select id="archiveType">
+                        <option value="grammar">문법</option>
+                        <option value="link">참고링크</option>
+                        <option value="file">PDF/파일경로</option>
+                    </select>
+                    <input type="text" id="archiveTitle" placeholder="제목 (예: 관계대명사 정리)">
+                    <input type="text" id="archiveContent" placeholder="내용 또는 링크/경로">
+                    <button class="primary-btn" onclick="addArchive()">저장</button>
+                </div>
             </div>
-        </div>
-    </section>
+            <div class="archive-list" id="archiveDisplay">
+                </div>
+        </section>
+
+        <section id="quiz-sec" class="content-section">
+            <header class="page-header"><h1>🧠 단어 퀴즈</h1></header>
+            <div class="card quiz-card" id="quiz-container">
+                <div id="quiz-start-view">
+                    <p>등록한 단어들로 퀴즈를 풀어보세요! (최소 4단어 필요)</p>
+                    <button class="primary-btn large" onclick="startQuiz()">퀴즈 시작하기</button>
+                </div>
+            </div>
+        </section>
+
+    </main>
 </div>
 
 <script src="script.js"></script>
