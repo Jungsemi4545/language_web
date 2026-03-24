@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>My Language Learning Hub</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
+        .container { max-width: 800px; margin: auto; }
+        .lang-selector { margin-bottom: 30px; padding: 10px; background: #f0f0f0; border-radius: 8px; }
+        .card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-top: 10px; }
+        .hidden { display: none; }
+        button { cursor: pointer; padding: 8px 16px; margin-right: 5px; }
+        .active-btn { background-color: #007bff; color: white; border: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🌍 외국어 학습 파트너</h1>
+    
+    <div class="lang-selector">
+        <p>공부할 언어를 선택하세요:</p>
+        <button onclick="selectLanguage('en')" id="btn-en">English</button>
+        <button onclick="selectLanguage('jp')" id="id-jp">日本語</button>
+    </div>
+
+    <hr>
+
+    <div id="content-area" class="hidden">
+        <h2 id="display-lang-name">언어 이름</h2>
+        
+        <div class="card">
+            <h3>📝 추천 시험 정보</h3>
+            <p id="exam-info">시험 정보가 여기에 표시됩니다.</p>
+        </div>
+
+        <div class="card">
+            <h3>❓ 예시 문제 (AI 추천 스타일)</h3>
+            <div id="exam-sample" style="background: #fff9e6; padding: 10px;">
+                </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 언어별 데이터 (나중에 별도 JSON 파일로 분리 가능)
+    const langData = {
+        en: {
+            name: "영어 (English)",
+            exam: "TOEIC, TOEFL, OPIc",
+            sample: "Q: Choose the correct word. 'She ____ to the store yesterday.' (A) go (B) went (C) gone"
+        },
+        jp: {
+            name: "일본어 (Japanese)",
+            exam: "JLPT (N1~N5), JPT",
+            sample: "Q: 次の漢字の読み方を選びなさい。'昨日' (A) きのう (B) あした (C) 今日"
+        }
+    };
+
+    function selectLanguage(lang) {
+        // 1. 데이터 가져오기
+        const data = langData[lang];
+        
+        // 2. UI 업데이트
+        document.getElementById('content-area').classList.remove('hidden');
+        document.getElementById('display-lang-name').innerText = data.name;
+        document.getElementById('exam-info').innerText = "추천 시험: " + data.exam;
+        document.getElementById('exam-sample').innerText = data.sample;
+
+        // 3. 버튼 활성화 표시
+        document.querySelectorAll('button').forEach(btn => btn.classList.remove('active-btn'));
+        document.getElementById(`btn-${lang}`)?.classList.add('active-btn');
+        document.getElementById(`id-${lang}`)?.classList.add('active-btn');
+
+        // 4. 선택 저장 (새로고침해도 유지되게)
+        localStorage.setItem('selectedLang', lang);
+    }
+
+    // 페이지 로드 시 마지막 선택 불러오기
+    window.onload = () => {
+        const lastLang = localStorage.getItem('selectedLang');
+        if (lastLang) selectLanguage(lastLang);
+    };
+</script>
+
+</body>
+</html>
