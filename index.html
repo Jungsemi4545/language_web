@@ -81,6 +81,30 @@
         const lastLang = localStorage.getItem('selectedLang');
         if (lastLang) selectLanguage(lastLang);
     };
+    let myWords = JSON.parse(localStorage.getItem('myWords')) || { en: [], jp: [] };
+
+function addWord() {
+    const currentLang = localStorage.getItem('selectedLang'); // 현재 선택된 언어 (en/jp)
+    const word = document.getElementById('word-input').value;
+    const mean = document.getElementById('mean-input').value;
+
+    if(!word || !mean) return alert("단어와 뜻을 입력하세요!");
+
+    // 데이터 추가
+    myWords[currentLang].push({
+        word: word,
+        mean: mean,
+        level: 'Easy',
+        learned: false,
+        date: new Date().toLocaleDateString()
+    });
+
+    // 브라우저에 저장
+    localStorage.setItem('myWords', JSON.stringify(myWords));
+    
+    alert("저장되었습니다!");
+    renderWordList(); // 리스트 새로고침
+}
 </script>
 
 </body>
